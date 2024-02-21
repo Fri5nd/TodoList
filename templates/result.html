@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index</title>
+    <title>Result</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,7 +13,9 @@
         <a href="{{ url_for('login')}}" class="navbar-login">Login</a>
     </nav>
 
-    <h1>Index Page</h1>
+    <h1>Result Page</h1>
+
+    <strong>Result of the database transaction:</strong> {{ msg }}
 
     <script src="/static/script.js" charset="UTF-8"></script>
 </body>
