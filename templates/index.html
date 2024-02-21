@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <nav class="navbar">
+        <a href="{{ url_for('home')}}" class="navbar-home"></a>
+        <a href="{{ url_for('newtask')}}" class="navbar-newtask"></a>
+        <a href="{{ url_for('login')}}" class="navbar-login"></a>
+    </nav>
+    
     <h1>Index Page</h1>
 
     <script src="/static/script.js" charset="UTF-8"></script>

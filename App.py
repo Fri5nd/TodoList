@@ -4,8 +4,12 @@ from flask import render_template
 app = Flask(__name__)
 
 @app.route("/")
-def index():
+def home():
     return render_template('index.html')
+
+@app.route("/addtask")
+def addtask():
+    return render_template('addtask.html')
 
 @app.route("/login")
 def login():
