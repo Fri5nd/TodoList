@@ -8,41 +8,50 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="{{ url_for('home')}}" class="navbar-home">Home</a>
-        <a href="{{ url_for('login')}}" class="navbar-login">Login</a>
+        <div class="navbar-container">
+            <a href="{{ url_for('home')}}" class="navbar-home">Home</a>
+            <a href="{{ url_for('login')}}" class="navbar-login">Login</a>
+        </div>
     </nav>
 
-    <h1>Index Page</h1>
-    <form action="{{ url_for('home') }}" method="POST">
-        <h3>Add a new task:</h3>
-        <textarea name="desc"></textarea>
-        <input type="submit" value="Submit">
-    </form>
+    <div class="container">
+        <form action="{{ url_for('home') }}" method="POST" class="add-task-form">
+            <h3>Add a new task:</h3>
+            <textarea name="desc"></textarea>
+            <input type="submit" value="Submit">
+        </form>
 
-    <table>
-        <thead>
-            <td><strong>ID</strong></td>
-            <td><strong>Task</strong></td>
-            <td><strong>Completed</strong></td>
-            <td><strong>Action</strong></td>
-        </thead>
-
-        {% for row in rows %}
-        <tr>
-            <td>{{ row["id"] }}</td>
-            <td>{{ row["description"] }}</td>
-            <td>{{ "false" if row["completed"] == 0 else "true" }}</td>
-            <td>
-                <form action="{{ url_for('toggle_completed', task_id=row['id']) }}" method="POST">
-                    <input type="submit" value="Toggle Completed">
-                </form>
-                <form action="{{ url_for('remove_task', task_id=row['id']) }}" method="POST">
-                    <input type="submit" value="Remove Task">
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-   
+        <div class="tasks">
+            <h2>Tasks</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Completed</th>
+                        <th>Complete</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>{{ row["description"] }}</td>
+                        <td>{{ "Not Completed" if row["completed"] == 0 else "Completed" }}</td>
+                        <td>
+                            <form action="{{ url_for('toggle_completed', task_id=row['id']) }}" method="POST">
+                                <input type="submit" value="Toggle Completed">
+                            </form>
+                        </td>
+                        <td>
+                            <form action="{{ url_for('remove_task', task_id=row['id']) }}" method="POST">
+                                <input type="submit" value="Remove Task">
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
