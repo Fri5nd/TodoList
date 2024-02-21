@@ -3,20 +3,27 @@ import sqlite3
 
 app = Flask(__name__)
 
-@app.route("/", methods = ["POST", "GET"])
+def get_next_id():
+    with sqlite3.connect('./database.sqlite') as con:
+        cur = con.cursor()
+        cur.execute("SELECT MAX(id) FROM todo")
+        max_id = cur.fetchone()[0]
+        return max_id + 1 if max_id is not None else 1
+
+@app.route("/", methods=["POST", "GET"])
 def home():
     if request.method == 'POST':
         try:
             desc = request.form['desc']
+            task_id = get_next_id()
 
             with sqlite3.connect('./database.sqlite') as con:
                 cur = con.cursor()
-                cur.execute("INSERT INTO todo (description) VALUES (?)",(desc,))
-
+                cur.execute("INSERT INTO todo (id, description) VALUES (?, ?)", (task_id, desc))
                 con.commit()
-        except:
+        except Exception as e:
+            print(e)
             con.rollback()
-
         finally:
             con.close()
             return redirect(url_for('home'))
@@ -51,7 +58,5 @@ def remove_task(task_id):
         con.commit()
     return redirect(url_for('home'))
 
-
-
-if __name__ == "__main__": 
+if __name__ == "__main__":
     app.run(debug=True)
