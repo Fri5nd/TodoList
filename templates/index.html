@@ -14,7 +14,22 @@
     </nav>
 
     <h1>Index Page</h1>
+    <table>
+        <thead>
+            <td><strong>ID</strong></td>
+            <td><strong>Task</strong></td>
+            <td><strong>Completed</strong></td>
+        </thead>
 
+        {% for row in rows %}
+        <tr>
+            <td>{{ row["id"] }}</td>
+            <td>{{ row["description"] }}</td>
+            <td>{{ "false" if row["completed"] == 0 else "true" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+   
     <script src="/static/script.js" charset="UTF-8"></script>
 </body>
 </html>

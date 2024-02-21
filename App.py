@@ -7,7 +7,15 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return render_template('index.html')
+    con = sqlite3.connect("database.sqlite")
+    con.row_factory = sqlite3.Row
+
+    cur = con.cursor()
+    cur.execute("SELECT * FROM todo")
+
+    rows = cur.fetchall()
+    con.close()
+    return render_template('index.html', rows=rows)
 
 @app.route("/addtask")
 def addtask():
