@@ -9,10 +9,10 @@ if 'username' in session:
     user = c.fetchone()
     conn.close()
 
-conn = sqlite3.connect('./' + user + '.sqlite')
+conn = sqlite3.connect('./todos.sqlite')
 
 # conn.execute('CREATE TABLE todo (id INTEGER PRIMARY KEY AUTOINCREMENT, description TEXT NOT NULL, completed BOOLEAN DEFAULT false)')
-conn.execute('INSERT INTO todo (description) VALUES ("test")')
+# conn.execute('INSERT INTO todo (description) VALUES ("test")')
 
 conn.commit()
 
