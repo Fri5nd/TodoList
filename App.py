@@ -5,12 +5,16 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-conn = sqlite3.connect('users.sqlite', check_same_thread=False)
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS users
-             (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)''')
-conn.commit()
-conn.close()
+def create_user_table(username):
+    conn = sqlite3.connect(f'{username}.sqlite')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS todo (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    description TEXT NOT NULL, 
+                    completed BOOLEAN DEFAULT false
+                )''')
+    conn.commit()
+    conn.close()
 
 def users():
     if 'username' in session:
@@ -22,9 +26,8 @@ def users():
         conn.close()
         return user
 
-
-def get_next_id():
-    with sqlite3.connect('./database.sqlite') as con:
+def get_next_id(username):
+    with sqlite3.connect(f'{username}.sqlite') as con:
         cur = con.cursor()
         cur.execute("SELECT MAX(id) FROM todo")
         max_id = cur.fetchone()[0]
@@ -36,28 +39,41 @@ def home():
     if request.method == 'POST':
         try:
             desc = request.form['desc']
-            task_id = get_next_id()
+            task_id = get_next_id(user[1])
 
-            with sqlite3.connect('./database.sqlite') as con:
+            with sqlite3.connect(f'{user[1]}.sqlite') as con:
                 cur = con.cursor()
+                cur.execute('''CREATE TABLE IF NOT EXISTS todo (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                                    description TEXT NOT NULL, 
+                                    completed BOOLEAN DEFAULT false
+                                )''')
+                con.commit()
+
                 cur.execute("INSERT INTO todo (id, description) VALUES (?, ?)", (task_id, desc))
                 con.commit()
         except Exception as e:
             print(e)
-            con.rollback()
-        finally:
-            con.close()
+            flash('An error occurred while adding the task.', 'error')
             return redirect(url_for('home'))
 
-    con = sqlite3.connect("database.sqlite")
+    con = sqlite3.connect(f'{user[1]}.sqlite')
     con.row_factory = sqlite3.Row
 
     cur = con.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS todo (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                        description TEXT NOT NULL, 
+                        completed BOOLEAN DEFAULT false
+                    )''')
+    con.commit()
+
     cur.execute("SELECT * FROM todo")
 
     rows = cur.fetchall()
     con.close()
     return render_template('index.html', rows=rows, user=user)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -74,6 +90,7 @@ def login():
         if user and check_password_hash(user[2], password):
             session['username'] = username
             flash('You have been successfully logged in.', 'success')
+            create_user_table(username)  # Create user's todo table
             conn.close()
             return redirect(url_for('home'))
         else:
@@ -82,8 +99,6 @@ def login():
             return redirect(url_for('login'))
 
     return render_template('login.html', user=user)
-
-
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -104,6 +119,7 @@ def register():
         else:
             hashed_password = generate_password_hash(password)
             c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
+            create_user_table(username)  # Create user's todo table
             conn.commit()
             conn.close()
             flash('Registration successful! You can now log in.', 'success')
@@ -111,11 +127,10 @@ def register():
 
     return render_template('register.html', user=user)
 
-
-
 @app.route("/toggle_completed/<int:task_id>", methods=["POST"])
 def toggle_completed(task_id):
-    with sqlite3.connect('./database.sqlite') as con:
+    user = users()
+    with sqlite3.connect(f'{user[1]}.sqlite') as con:
         cur = con.cursor()
         cur.execute("UPDATE todo SET completed = NOT completed WHERE id = ?", (task_id,))
         con.commit()
@@ -123,7 +138,8 @@ def toggle_completed(task_id):
 
 @app.route("/remove_task/<int:task_id>", methods=["POST"])
 def remove_task(task_id):
-    with sqlite3.connect('./database.sqlite') as con:
+    user = users()
+    with sqlite3.connect(f'{user[1]}.sqlite') as con:
         cur = con.cursor()
         cur.execute("DELETE FROM todo WHERE id = ?", (task_id,))
         con.commit()
