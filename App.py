@@ -36,44 +36,47 @@ def get_next_id(username):
 @app.route("/", methods=["POST", "GET"])
 def home():
     user = users()
-    if request.method == 'POST':
-        
-        try:
-            desc = request.form['desc']
-            task_id = get_next_id(user[1])
+    if user[1] == "":
+        redirect(url_for('login'))
+    else:
+        if request.method == 'POST':
 
-            with sqlite3.connect('todos.sqlite') as con:
-                cur = con.cursor()
-                cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                                    description TEXT NOT NULL, 
-                                    completed BOOLEAN DEFAULT false
-                                )''')
-                con.commit()
+            try:
+                desc = request.form['desc']
+                task_id = get_next_id(user[1])
 
-                cur.execute(f"INSERT INTO {user[1]} (id, description) VALUES (?, ?)", (task_id, desc))
-                con.commit()
-        except Exception as e:
-            print(e)
-            flash('An error occurred while adding the task.', 'error')
-            return redirect(url_for('home'))
+                with sqlite3.connect('todos.sqlite') as con:
+                    cur = con.cursor()
+                    cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                                        description TEXT NOT NULL, 
+                                        completed BOOLEAN DEFAULT false
+                                    )''')
+                    con.commit()
 
-    con = sqlite3.connect('todos.sqlite')
-    con.row_factory = sqlite3.Row
+                    cur.execute(f"INSERT INTO {user[1]} (id, description) VALUES (?, ?)", (task_id, desc))
+                    con.commit()
+            except Exception as e:
+                print(e)
+                flash('An error occurred while adding the task.', 'error')
+                return redirect(url_for('home'))
 
-    cur = con.cursor()
-    cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                        description TEXT NOT NULL, 
-                        completed BOOLEAN DEFAULT false
-                    )''')
-    con.commit()
+        con = sqlite3.connect('todos.sqlite')
+        con.row_factory = sqlite3.Row
 
-    cur.execute(f"SELECT * FROM {user[1]}")
+        cur = con.cursor()
+        cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                            description TEXT NOT NULL, 
+                            completed BOOLEAN DEFAULT false
+                        )''')
+        con.commit()
 
-    rows = cur.fetchall()
-    con.close()
-    return render_template('index.html', rows=rows, user=user)
+        cur.execute(f"SELECT * FROM {user[1]}")
+
+        rows = cur.fetchall()
+        con.close()
+        return render_template('index.html', rows=rows, user=user)
 
 
 @app.route('/login', methods=['GET', 'POST'])
