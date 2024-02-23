@@ -6,9 +6,9 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 def create_user_table(username):
-    conn = sqlite3.connect(f'{username}.sqlite')
+    conn = sqlite3.connect('todos.sqlite')
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS todo (
+    c.execute(f'''CREATE TABLE IF NOT EXISTS {username} (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, 
                     description TEXT NOT NULL, 
                     completed BOOLEAN DEFAULT false
@@ -27,52 +27,56 @@ def users():
         return user
 
 def get_next_id(username):
-    with sqlite3.connect(f'{username}.sqlite') as con:
+    with sqlite3.connect('todos.sqlite') as con:
         cur = con.cursor()
-        cur.execute("SELECT MAX(id) FROM todo")
+        cur.execute(f"SELECT MAX(id) FROM {username}")
         max_id = cur.fetchone()[0]
         return max_id + 1 if max_id is not None else 1
 
 @app.route("/", methods=["POST", "GET"])
 def home():
     user = users()
-    if request.method == 'POST':
-        try:
-            desc = request.form['desc']
-            task_id = get_next_id(user[1])
+    if 'username' in session:
+        redirect(url_for('login'))
+    else:
+        if request.method == 'POST':
 
-            with sqlite3.connect(f'{user[1]}.sqlite') as con:
-                cur = con.cursor()
-                cur.execute('''CREATE TABLE IF NOT EXISTS todo (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                                    description TEXT NOT NULL, 
-                                    completed BOOLEAN DEFAULT false
-                                )''')
-                con.commit()
+            try:
+                desc = request.form['desc']
+                task_id = get_next_id(user[1])
 
-                cur.execute("INSERT INTO todo (id, description) VALUES (?, ?)", (task_id, desc))
-                con.commit()
-        except Exception as e:
-            print(e)
-            flash('An error occurred while adding the task.', 'error')
-            return redirect(url_for('home'))
+                with sqlite3.connect('todos.sqlite') as con:
+                    cur = con.cursor()
+                    cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                                        description TEXT NOT NULL, 
+                                        completed BOOLEAN DEFAULT false
+                                    )''')
+                    con.commit()
 
-    con = sqlite3.connect(f'{user[1]}.sqlite')
-    con.row_factory = sqlite3.Row
+                    cur.execute(f"INSERT INTO {user[1]} (id, description) VALUES (?, ?)", (task_id, desc))
+                    con.commit()
+            except Exception as e:
+                print(e)
+                flash('An error occurred while adding the task.', 'error')
+                return redirect(url_for('home'))
 
-    cur = con.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS todo (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                        description TEXT NOT NULL, 
-                        completed BOOLEAN DEFAULT false
-                    )''')
-    con.commit()
+        con = sqlite3.connect('todos.sqlite')
+        con.row_factory = sqlite3.Row
 
-    cur.execute("SELECT * FROM todo")
+        cur = con.cursor()
+        cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                            description TEXT NOT NULL, 
+                            completed BOOLEAN DEFAULT false
+                        )''')
+        con.commit()
 
-    rows = cur.fetchall()
-    con.close()
-    return render_template('index.html', rows=rows, user=user)
+        cur.execute(f"SELECT * FROM {user[1]}")
+
+        rows = cur.fetchall()
+        con.close()
+        return render_template('index.html', rows=rows, user=user)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -90,7 +94,7 @@ def login():
         if user and check_password_hash(user[2], password):
             session['username'] = username
             flash('You have been successfully logged in.', 'success')
-            create_user_table(username)  # Create user's todo table
+            create_user_table(username)
             conn.close()
             return redirect(url_for('home'))
         else:
@@ -119,7 +123,7 @@ def register():
         else:
             hashed_password = generate_password_hash(password)
             c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
-            create_user_table(username)  # Create user's todo table
+            create_user_table(username)
             conn.commit()
             conn.close()
             flash('Registration successful! You can now log in.', 'success')
@@ -130,18 +134,18 @@ def register():
 @app.route("/toggle_completed/<int:task_id>", methods=["POST"])
 def toggle_completed(task_id):
     user = users()
-    with sqlite3.connect(f'{user[1]}.sqlite') as con:
+    with sqlite3.connect('todos.sqlite') as con:
         cur = con.cursor()
-        cur.execute("UPDATE todo SET completed = NOT completed WHERE id = ?", (task_id,))
+        cur.execute(f"UPDATE {user[1]} SET completed = NOT completed WHERE id = ?", (task_id,))
         con.commit()
     return redirect(url_for('home'))
 
 @app.route("/remove_task/<int:task_id>", methods=["POST"])
 def remove_task(task_id):
     user = users()
-    with sqlite3.connect(f'{user[1]}.sqlite') as con:
+    with sqlite3.connect('todos.sqlite') as con:
         cur = con.cursor()
-        cur.execute("DELETE FROM todo WHERE id = ?", (task_id,))
+        cur.execute(f"DELETE FROM {user[1]} WHERE id = ?", (task_id,))
         con.commit()
     return redirect(url_for('home'))
 
