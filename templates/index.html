@@ -43,7 +43,7 @@
                             </form>
                         </td>
                         <td>
-                            <form action="{{ url_for('remove_task', task_id=row['id']) }}" method="POST">
+                            <form onclick="return confirm('Are you sure?')" action="{{ url_for('remove_task', task_id=row['id']) }}" method="POST">
                                 <input type="submit" value="Remove Task">
                             </form>
                         </td>

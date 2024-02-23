@@ -32,6 +32,7 @@ def home():
             try:
                 desc = request.form['desc']
                 task_id = get_next_id()
+                print(task_id)
 
                 with sqlite3.connect('mydb.sqlite') as con:
                     cur = con.cursor()
