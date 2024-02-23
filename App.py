@@ -5,78 +5,53 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-def create_user_table(username):
-    conn = sqlite3.connect('todos.sqlite')
-    c = conn.cursor()
-    c.execute(f'''CREATE TABLE IF NOT EXISTS {username} (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                    description TEXT NOT NULL, 
-                    completed BOOLEAN DEFAULT false
-                )''')
-    conn.commit()
-    conn.close()
-
 def users():
     if 'username' in session:
         username = session['username']
-        conn = sqlite3.connect('users.sqlite')
+        conn = sqlite3.connect('mydb.sqlite')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         user = c.fetchone()
         conn.close()
         return user
 
-def get_next_id(username):
-    with sqlite3.connect('todos.sqlite') as con:
+def get_next_id():
+    with sqlite3.connect('mydb.sqlite') as con:
         cur = con.cursor()
-        cur.execute(f"SELECT MAX(id) FROM {username}")
+        cur.execute(f"SELECT MAX(id) FROM todo")
         max_id = cur.fetchone()[0]
         return max_id + 1 if max_id is not None else 1
 
 @app.route("/", methods=["POST", "GET"])
 def home():
     user = users()
-    if 'username' in session:
-        redirect(url_for('login'))
+    if user is None:
+        return redirect(url_for('login'))
     else:
         if request.method == 'POST':
-
             try:
                 desc = request.form['desc']
-                task_id = get_next_id(user[1])
+                task_id = get_next_id()
 
-                with sqlite3.connect('todos.sqlite') as con:
+                with sqlite3.connect('mydb.sqlite') as con:
                     cur = con.cursor()
-                    cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
-                                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                                        description TEXT NOT NULL, 
-                                        completed BOOLEAN DEFAULT false
-                                    )''')
-                    con.commit()
-
-                    cur.execute(f"INSERT INTO {user[1]} (id, description) VALUES (?, ?)", (task_id, desc))
+                    cur.execute(f"INSERT INTO todo (id, userid, description) VALUES (?, ?, ?)", (task_id, user[0], desc))
                     con.commit()
             except Exception as e:
                 print(e)
                 flash('An error occurred while adding the task.', 'error')
                 return redirect(url_for('home'))
 
-        con = sqlite3.connect('todos.sqlite')
+        con = sqlite3.connect('mydb.sqlite')
         con.row_factory = sqlite3.Row
 
         cur = con.cursor()
-        cur.execute(f'''CREATE TABLE IF NOT EXISTS {user[1]} (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                            description TEXT NOT NULL, 
-                            completed BOOLEAN DEFAULT false
-                        )''')
-        con.commit()
-
-        cur.execute(f"SELECT * FROM {user[1]}")
+        cur.execute(f"SELECT * FROM todo WHERE userid = ?", (user[0],))
 
         rows = cur.fetchall()
         con.close()
         return render_template('index.html', rows=rows, user=user)
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -86,7 +61,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        conn = sqlite3.connect('users.sqlite')
+        conn = sqlite3.connect('mydb.sqlite')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         user = c.fetchone()
@@ -94,7 +69,6 @@ def login():
         if user and check_password_hash(user[2], password):
             session['username'] = username
             flash('You have been successfully logged in.', 'success')
-            create_user_table(username)
             conn.close()
             return redirect(url_for('home'))
         else:
@@ -111,7 +85,7 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        conn = sqlite3.connect('users.sqlite')
+        conn = sqlite3.connect('mydb.sqlite')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         existing_user = c.fetchone()
@@ -123,7 +97,6 @@ def register():
         else:
             hashed_password = generate_password_hash(password)
             c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
-            create_user_table(username)
             conn.commit()
             conn.close()
             flash('Registration successful! You can now log in.', 'success')
@@ -134,18 +107,18 @@ def register():
 @app.route("/toggle_completed/<int:task_id>", methods=["POST"])
 def toggle_completed(task_id):
     user = users()
-    with sqlite3.connect('todos.sqlite') as con:
+    with sqlite3.connect('mydb.sqlite') as con:
         cur = con.cursor()
-        cur.execute(f"UPDATE {user[1]} SET completed = NOT completed WHERE id = ?", (task_id,))
+        cur.execute(f"UPDATE todo SET completed = NOT completed WHERE id = {task_id} AND userid = {user[0]}")
         con.commit()
     return redirect(url_for('home'))
 
 @app.route("/remove_task/<int:task_id>", methods=["POST"])
 def remove_task(task_id):
     user = users()
-    with sqlite3.connect('todos.sqlite') as con:
+    with sqlite3.connect('mydb.sqlite') as con:
         cur = con.cursor()
-        cur.execute(f"DELETE FROM {user[1]} WHERE id = ?", (task_id,))
+        cur.execute(f"DELETE FROM todo WHERE id = {task_id} AND userid = {user[0]}")
         con.commit()
     return redirect(url_for('home'))
 
