@@ -9,7 +9,7 @@ import sqlite3
 #     user = c.fetchone()
 #     conn.close()
 
-conn = sqlite3.connect('./mydb.sqlite')
+conn = sqlite3.connect('./db/mydb.sqlite')
 
 conn.execute(f'''CREATE TABLE IF NOT EXISTS todo (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -8,7 +8,7 @@ app.secret_key = 'your_secret_key'
 def users():
     if 'username' in session:
         username = session['username']
-        conn = sqlite3.connect('mydb.sqlite')
+        conn = sqlite3.connect('./db/mydb.sqlite')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         user = c.fetchone()
@@ -16,7 +16,7 @@ def users():
         return user
 
 def get_next_id():
-    with sqlite3.connect('mydb.sqlite') as con:
+    with sqlite3.connect('./db/mydb.sqlite') as con:
         cur = con.cursor()
         cur.execute(f"SELECT MAX(id) FROM todo")
         max_id = cur.fetchone()[0]
@@ -34,7 +34,7 @@ def home():
                 task_id = get_next_id()
                 print(task_id)
 
-                with sqlite3.connect('mydb.sqlite') as con:
+                with sqlite3.connect('./db/mydb.sqlite') as con:
                     cur = con.cursor()
                     cur.execute(f"INSERT INTO todo (id, userid, description) VALUES (?, ?, ?)", (task_id, user[0], desc))
                     con.commit()
@@ -46,7 +46,7 @@ def home():
                 flash('An error occurred while adding the task.', 'error')
                 return redirect(url_for('home'))
 
-        con = sqlite3.connect('mydb.sqlite')
+        con = sqlite3.connect('./db/mydb.sqlite')
         con.row_factory = sqlite3.Row
 
         cur = con.cursor()
@@ -65,7 +65,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        conn = sqlite3.connect('mydb.sqlite')
+        conn = sqlite3.connect('./db/mydb.sqlite')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         user = c.fetchone()
@@ -89,7 +89,7 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        conn = sqlite3.connect('mydb.sqlite')
+        conn = sqlite3.connect('./db/mydb.sqlite')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         existing_user = c.fetchone()
@@ -111,7 +111,7 @@ def register():
 @app.route("/toggle_completed/<int:task_id>", methods=["POST"])
 def toggle_completed(task_id):
     user = users()
-    with sqlite3.connect('mydb.sqlite') as con:
+    with sqlite3.connect('./db/mydb.sqlite') as con:
         cur = con.cursor()
         cur.execute(f"UPDATE todo SET completed = NOT completed WHERE id = {task_id} AND userid = {user[0]}")
         con.commit()
@@ -120,7 +120,7 @@ def toggle_completed(task_id):
 @app.route("/remove_task/<int:task_id>", methods=["POST"])
 def remove_task(task_id):
     user = users()
-    with sqlite3.connect('mydb.sqlite') as con:
+    with sqlite3.connect('./db/mydb.sqlite') as con:
         cur = con.cursor()
         cur.execute(f"DELETE FROM todo WHERE id = {task_id} AND userid = {user[0]}")
         con.commit()
