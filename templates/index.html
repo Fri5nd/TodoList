@@ -13,7 +13,6 @@
             <a href="{{ url_for('login')}}" class="navbar-login">Login</a>
         </div>
     </nav>
-    <h2>Welcome, {{ user[1] }}</h2>
 
     <div class="container">
         <form action="{{ url_for('home') }}" method="POST" class="add-task-form">
@@ -23,7 +22,7 @@
         </form>
 
         <div class="tasks">
-            <h2>Tasks</h2>
+            <h2>{{ user[1] }}'s Tasks</h2>
             <table>
                 <thead>
                     <tr>

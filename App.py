@@ -37,6 +37,9 @@ def home():
                     cur = con.cursor()
                     cur.execute(f"INSERT INTO todo (id, userid, description) VALUES (?, ?, ?)", (task_id, user[0], desc))
                     con.commit()
+
+                return redirect(url_for('home'))
+
             except Exception as e:
                 print(e)
                 flash('An error occurred while adding the task.', 'error')
