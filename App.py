@@ -36,7 +36,7 @@ def get_next_id(username):
 @app.route("/", methods=["POST", "GET"])
 def home():
     user = users()
-    if user[1] == "":
+    if 'username' in session:
         redirect(url_for('login'))
     else:
         if request.method == 'POST':
